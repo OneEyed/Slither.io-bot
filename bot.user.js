@@ -736,12 +736,14 @@ var userInterface = (function() {
                 var input = document.getElementById(key);
                 var value = input.value;
                 if( value != window.botsettings[key] ) {
-                    window.botsettings[key] = value;
+                    window.botsettings[key] = eval(value);
                 }
                 if( key.indexOf("collision") > -1 || key.indexOf("Grid") > -1 ) {
                     collisionGrid.init(window.botsettings.collisionGridColumnCount, window.botsettings.collisionGridRowCount, window.botsettings.collisionCellSize);
                 }
             }
+
+            userInterface.savePreference('botsettings', JSON.stringify(window.botsettings));
         },
 
         // Store FPS data
@@ -1014,13 +1016,13 @@ window.sosBackup = sos;
         astarEmptyWeight: 1000,
         foodIgnoreAngle: -0.7,
         isFacingTargetAngle: 0.5,
-        foodHighQualityScore: 50,
+        foodHighQualityScore: 2500,
         foodFollowTime: 5000,
-        nearSnakeDistance: 150,
+        nearSnakeDistance: 22500,
         radarSurroundPercent: .3,
-        isReachedTargetDistance: 50,
-        isNearSpeedSnakeDistance: 300,
-        isNearSnakeDistance: 150,
+        isReachedTargetDistance: 2500,
+        isNearSpeedSnakeDistance: 90000,
+        isNearSnakeDistance: 22500,
         collisionSnakeHeadSizeMultiplier: 2,
         collisionSnakePartSizeMultiplier: 1.2,
         collisionSnakePartMinimumSize: 30,
