@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Slither.io-bot A* OneEyed
 // @namespace    http://slither.io/
-// @version      0.9.7
+// @version      0.9.7.1
 // @description  Slither.io bot A* OneEyed
 // @author       Ermiya Eskandary & Théophile Cailliau
 // @match        http://slither.io/
