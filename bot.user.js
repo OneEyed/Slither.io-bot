@@ -705,10 +705,14 @@ var userInterface = (function() {
             console.log('Toggle settings set to: ' +
                 window.toggleSettings);
 
-            var elem = document.getElementById('settings_overlay');
+            userInterface.showSettings(window.toggleSettings);
+        },
+
+        showSettings: function(show) {
+             var elem = document.getElementById('settings_overlay');
             if( !elem ) return;
 
-            if( window.toggleSettings ) {
+            if( show ) {
                 elem.style.display = "none";
             }
             else {
@@ -902,6 +906,8 @@ var userInterface = (function() {
             window.rendermode_overlay.innerHTML = window.spanstyle +
                 '(O) Mobile rendering: </span>' + userInterface.handleTextColor(
                     window.mobileRender);
+
+            userInterface.showSettings(window.toggleSettings);
         },
 
         onFrameUpdate: function() {
