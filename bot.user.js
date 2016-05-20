@@ -435,9 +435,9 @@ var bot = (function() {
             window.log('Starting Bot.');
             bot.isBotRunning = true;
 
-            //if( collisionGrid.grid.length == 0 ) {
-                collisionGrid.init(100, 100, 30);
-            //}
+            //Initialize the collision grid
+            collisionGrid.init(window.botsettings.collisionGridColumnCount, window.botsettings.collisionGridRowCount, window.botsettings.collisionCellSize);
+
             /*
              * Removed the onmousemove listener so we can move the snake
              * manually by setting coordinates
@@ -558,8 +558,8 @@ var bot = (function() {
                     radius: 1
                 });
                 canvasPosB = canvas.mapToCanvas({
-                    x: curpos.x + bot.heading.x*100,
-                    y: curpos.y + bot.heading.y*100,
+                    x: curpos.x + bot.heading.x*window.snake.sp*30,
+                    y: curpos.y + bot.heading.y*window.snake.sp*30,
                     radius: 1
                 });
 
@@ -658,6 +658,86 @@ var userInterface = (function() {
             if (className) div.className = className;
             if (style) div.style = style;
             document.body.appendChild(div);
+            return div;
+        },
+
+        appendSettings: function(parentElem) {
+
+             var h2 = document.createElement('h2');
+            h2.className = 'botSettingsHeader';
+            h2.innerHTML = 'Bot Configurable Settings';
+            parentElem.appendChild(h2);
+
+            var h6 = document.createElement('small');
+            h6.className = 'botSettingsInfo';
+            h6.innerHTML = 'Use Tab and Alt+Tab to navigate.  Save/Reset buttons are clickable.<br /><br />';
+            parentElem.appendChild(h6);
+
+            parentElem.style.width = "400px";
+
+            var cnt = 0;
+            for(var key in window.botsettings ) {
+                var value = window.botsettings[key];
+                var div = document.createElement('div');
+                div.style.float = "left";
+                div.className = 'botSettingsOption';
+                div.innerHTML = '<label style="margin-top:8px; font-size:11px; display:block;width:200px">' + key + "</label>" + '<input style="font-size:10px; background-color:#666; color:#ccc; height:16px; border:0; line-height:16px;" type="text" id="' + key + '" value="' + value + '">';
+                parentElem.appendChild(div);
+            }
+
+            var div = document.createElement('span');
+            div.className = 'botSaveSettings';
+            div.innerHTML = '<input style="margin-top:10px;" type="button" id="saveBotSettings" value="Save">';
+            div.onclick = userInterface.saveSettings;
+            parentElem.appendChild(div);
+
+            var div = document.createElement('span');
+            div.className = 'botResetSettings';
+            div.innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-top:10px;"  type="button" id="resetBotSettings" value="Defaults">';
+            div.onclick = userInterface.resetSettings;
+
+            parentElem.appendChild(div);
+
+        },
+
+        toggleSettings: function() {
+            window.toggleSettings = !window.toggleSettings;
+            console.log('Toggle settings set to: ' +
+                window.toggleSettings);
+
+            var elem = document.getElementById('settings_overlay');
+            if( !elem ) return;
+
+            if( window.toggleSettings ) {
+                elem.style.display = "none";
+            }
+            else {
+                elem.style.display = "block";
+            }
+        },
+
+        resetSettings: function() {
+            for(var key in window.botsettings ) {
+                var input = document.getElementById(key);
+                var value = input.value;
+                if( value != window.botsettings[key] ) {
+                    input.value = window.botsettings[key];
+                }
+            }
+        },
+
+        saveSettings: function() {
+            var shouldReloadGrid = false;
+            for(var key in window.botsettings ) {
+                var input = document.getElementById(key);
+                var value = input.value;
+                if( value != window.botsettings[key] ) {
+                    window.botsettings[key] = value;
+                }
+                if( key.indexOf("collision") > -1 || key.indexOf("Grid") > -1 ) {
+                    collisionGrid.init(window.botsettings.collisionGridColumnCount, window.botsettings.collisionGridRowCount, window.botsettings.collisionCellSize);
+                }
+            }
         },
 
         // Store FPS data
@@ -714,6 +794,15 @@ var userInterface = (function() {
                     userInterface.savePreference('gridDebugging',
                         window.gridDebugging);
                 }
+                // Leter 'S'
+                if (e.keyCode === 83) {
+
+                    userInterface.toggleSettings();
+                    userInterface.savePreference('toggleSettings',
+                        window.toggleSettings);
+
+                }
+
                 // Letter 'I' to toggle autorespawn
                 if (e.keyCode === 73) {
                     window.autoRespawn = !window.autoRespawn;
@@ -797,7 +886,10 @@ var userInterface = (function() {
                     window.visualDebugging);
             window.grid_debugging_overlay.innerHTML = window.spanstyle +
                 '(G) Grid debugging: </span>' + userInterface.handleTextColor(
-                    window.visualDebugging);
+                    window.gridDebugging);
+            //window.toggle_settings_overlay.innerHTML = window.spanstyle +
+            //    '(S) Toggle Settings: </span>' + userInterface.handleTextColor(
+            //        window.toggleSettings);
             window.logdebugging_overlay.innerHTML = window.spanstyle +
                 '(U) Log debugging: </span>' + userInterface.handleTextColor(
                     window.logDebugging);
@@ -897,6 +989,46 @@ window.sosBackup = sos;
     // Load preferences
     userInterface.loadPreference('logDebugging', false);
     userInterface.loadPreference('visualDebugging', false);
+    userInterface.loadPreference('gridDebugging', false);
+    userInterface.loadPreference('toggleSettings', false);
+
+    var botSettingsDefaults = {
+        //performance variables
+        collisionGridColumnCount: 100,
+        collisionGridRowCount: 100,
+        collisionCellSize: 25,
+        radarDistance: 1000,
+        radarAngleIncrement: 10,
+        astarTries: 10000,
+        foodGridSize: 10,
+        foodCellSize: 100,
+
+        //smartness variables
+        astarFoodWeightMultiplier: -2,
+        astarEmptyWeight: 1000,
+        foodIgnoreAngle: -0.7,
+        isFacingTargetAngle: 0.5,
+        foodHighQualityScore: 50,
+        foodFollowTime: 5000,
+        nearSnakeDistance: 150,
+        radarSurroundPercent: .3,
+        isReachedTargetDistance: 50,
+        isNearSpeedSnakeDistance: 300,
+        isNearSnakeDistance: 150,
+        collisionSnakeHeadSizeMultiplier: 2,
+        collisionSnakePartSizeMultiplier: 1.2,
+        collisionSnakePartMinimumSize: 30,
+    };
+
+    userInterface.loadPreference('botsettings', JSON.stringify(botSettingsDefaults));
+    window.botsettings = JSON.parse(window.botsettings);
+    //copy over new default values if they updated from older version
+    for( var key in window.botSettingsDefaults ) {
+        if( !window.botsettings[key] ) {
+            window.botsettings[key] = window.botSettingsDefaults[key];
+        }
+    }
+
     userInterface.loadPreference('autoRespawn', false);
     userInterface.loadPreference('mobileRender', false);
     userInterface.loadPreference('rotateskin', false);
@@ -930,6 +1062,23 @@ window.sosBackup = sos;
         'left: 30; top: 170px;');
     userInterface.appendDiv('grid_debugging_overlay', 'nsi', window.generalstyle +
         'left: 30; top: 185px;');
+    var toggleOverlay = userInterface.appendDiv('toggle_settings_overlay', 'nsi', window.generalstyle +
+        'left: 30; top: 10px;');
+
+    var input = document.createElement("input");
+    input.id = "toggleSettingsButton";
+    input.value = "Toggle Settings";
+    input.type = "button";
+    input.style.background = "#666";
+    input.style.border = "0";
+    input.style.color = "#ccc";
+    input.style.padding = "10px";
+    input.onclick = userInterface.toggleSettings;
+    toggleOverlay.appendChild(input);
+
+    var settingsoverlay = userInterface.appendDiv('settings_overlay', 'nsi', window.generalstyle +
+        'right: 30px; top: 120px; z-index: 9999; display:none;');
+    userInterface.appendSettings(settingsoverlay);
 
     userInterface.appendDiv('quickResp_overlay', 'nsi', window.generalstyle +
         'left: 30; top: 285px;');

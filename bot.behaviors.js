@@ -125,7 +125,7 @@ var behaviors = (function() {
 
         isSprintAllowed: function(obj) {
 
-            var isAlmostSurrouneded = (bot.radarResults && bot.radarResults.open.length > 0 && bot.radarResults.pct < 0.30);
+            var isAlmostSurrouneded = (bot.radarResults && bot.radarResults.open.length > 0 && bot.radarResults.pct < window.botsettings.radarSurroundPercent);
 
 
             if( obj.insidesnake ) {
@@ -143,14 +143,14 @@ var behaviors = (function() {
                 return;
             }
 
-            if( obj.foodTarget && obj.foodTarget.score > 50 ) {
-                if( bot.radarResults && bot.radarResults.open.length > 0 && bot.radarResults.pct < 0.30 ) {
+            if( obj.foodTarget && obj.foodTarget.score > window.botsettings.foodHighQualityScore ) {
+                if( bot.radarResults && bot.radarResults.open.length > 0 && bot.radarResults.pct < window.botsettings.radarSurroundPercent ) {
                     console.log("almost surrounded");
                     this.success();
                     return;
                 }
                 var v = canvas.getRelativeAngle(window.getPos(), obj.goalCoordinates);
-                if( v.dot >= 0.5 ) {
+                if( v.dot >= window.botsettings.isFacingTargetAngle ) {
                     this.success();
                     return;
                 }
@@ -197,7 +197,7 @@ var behaviors = (function() {
 
         isHighQualityFoodAvailable: function(obj) {
             if( collisionGrid.foodGroups.length ) {
-                if( collisionGrid.foodGroups[0].score > 50 ) {
+                if( collisionGrid.foodGroups[0].score > window.botsettings.foodHighQualityScore ) {
                     this.success();
                     return;
                 }
@@ -396,7 +396,7 @@ var behaviors = (function() {
         isFollowingFood: function(obj) {
             var curtime = (new Date()).getTime();
             var diff = curtime - obj.followTime;
-            if( diff <= 5000 ) {
+            if( diff <= window.botsettings.foodFollowTime ) {
                 //console.log("Following FOOD!");
                 this.success();
                 return;
@@ -405,7 +405,7 @@ var behaviors = (function() {
         },
 
         isGoodFood: function(obj) {
-            if( obj.foodTarget && obj.foodTarget.score > 50 ) {
+            if( obj.foodTarget && obj.foodTarget.score > window.botsettings.foodHighQualityScore ) {
                 this.success();
                 return;
             }
@@ -416,7 +416,7 @@ var behaviors = (function() {
             //var relv = {x: curpos.x - obj.followCoordinates.x, y: curpos.y-obj.followCoordinates.y};
 
             var v = canvas.getRelativeAngle(window.getPos(), obj.goalCoordinates);
-            if( v.dot >= 0.5 ) {
+            if( v.dot >= window.botsettings.isFacingTargetAngle ) {
                 this.success();
                 return;
             }
@@ -426,7 +426,7 @@ var behaviors = (function() {
         isNearTarget: function(obj) {
             var curpos = window.getPos();
             var dist = canvas.getDistance2(curpos.x, curpos.y, obj.goalCoordinates.x, obj.goalCoordinates.y);
-            if( dist < 40000 ) { //200 units
+            if( dist < window.botsettings.isNearTargetDistance ) { //200 units
                 this.success();
                 return;
             }
@@ -436,7 +436,7 @@ var behaviors = (function() {
         isReachedTarget: function(obj) {
             var curpos = window.getPos();
             var dist = canvas.getDistance2(curpos.x, curpos.y, obj.goalCoordinates.x, obj.goalCoordinates.y);
-            if( dist < 10000 ) { //50 units
+            if( dist < window.botsettings.isReachedTargetDistance ) { //50 units
                 this.success();
                 return;
             }
@@ -459,7 +459,7 @@ var behaviors = (function() {
             obj.insidesnake = false;
 
             var aggressorCnt = collisionGrid.snakeAggressors.length;
-            var mindist = 22500;
+            var mindist = window.botsettings.isNearSnakeDistance;
 
             var curpos = window.getPos();
             var cell = collisionGrid.getCellByXY(curpos.x,curpos.y);
@@ -482,9 +482,9 @@ var behaviors = (function() {
             for(var i=0; i<aggressorCnt; i++) {
                 var aggressor = collisionGrid.snakeAggressors[i];
                 if( aggressor.snk.sp > 7 )
-                    mindist = 90000;
+                    mindist = window.botsettings.isNearSpeedSnakeDistance;
                 else
-                    mindist = 22500;
+                    mindist = window.botsettings.isNearSnakeDistance;
 
                 if( aggressor.snk.closest.distance2 < mindist ) {
                     obj.aggressor = aggressor;
@@ -498,7 +498,7 @@ var behaviors = (function() {
         },
 
         isAlmostSurrounded: function(obj) {
-            if( bot.radarResults && bot.radarResults.open.length > 0 && bot.radarResults.pct < 0.30 ) {
+            if( bot.radarResults && bot.radarResults.open.length > 0 && bot.radarResults.pct < window.botsettings.radarSurroundPercent ) {
                 console.log("almost surrounded");
                 this.success();
                 return;
@@ -528,7 +528,13 @@ var behaviors = (function() {
 
 
         isTargetBlockedBySnake: function(obj) {
-            var line = collisionGrid.lineTest(curpos.x, curpos.y, obj.goalCoordinates.x, obj.goalCoordinates.y,TYPE_SNAKE);
+            var line = collisionGrid.lineTest(curpos.x, curpos.y, obj.goalCoordinates.x, obj.goalCoordinates.y, TYPE_SNAKE);
+            if( line.node.type == TYPE_SNAKE )
+            {
+                this.success();
+                return;
+            }
+            /*
             var linePos = collisionGrid.getCellByColRow(line.col,line.row);
             var collisionDist = canvas.getDistance2(curpos.x, curpos.y, linePos.x, linePos.y);
             if( collisionDist < 2500 ) {
@@ -539,10 +545,10 @@ var behaviors = (function() {
                 //window.goalCoordinates.x = curpos.x + dir.x;
                 //window.goalCoordinates.y = curpos.y + dir.y;
                 canvas.setMouseCoordinates(canvas.mapToMouse(obj.goalCoordinates));
-                bot.stopFollowLine(0);
+                //bot.stopFollowLine(0);
                 this.success();
                 return;
-            }
+            }*/
             this.fail();
         },
 

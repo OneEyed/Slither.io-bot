@@ -230,7 +230,7 @@ var collisionGrid = (function() {
             for(var col=0; col<w; col++) {
                 collisionGrid.grid[col] = [];
                 for(var row=0; row<h; row++) {
-                    collisionGrid.grid[col][row] = new GridNode(col, row, 1000, TYPE_EMPTY);
+                    collisionGrid.grid[col][row] = new GridNode(col, row, window.botsettings.astarEmptyWeight, TYPE_EMPTY);
                 }
             }
         },
@@ -252,7 +252,7 @@ var collisionGrid = (function() {
             collisionGrid.addSnakes();
             collisionGrid.addFood();
 g
-            bot.radarResults = collisionHelper.radarScan(15,1000);
+            bot.radarResults = collisionHelper.radarScan(window.botsettings.radarAngleIncrement,window.botsettings.radarDistance);
         },
 
 
@@ -343,7 +343,7 @@ g
         },
 
         markCellEmpty: function(node, weight) {
-            weight = weight || 1000;
+            weight = weight || window.botsettings.astarEmptyWeight;
             node.type = TYPE_EMPTY;
             node.weight = weight;
             //var node = collisionGrid.markCell(col, row, weight, TYPE_EMPTY);
@@ -352,7 +352,7 @@ g
 
         markCellFood: function(node, food) {
             node.type = TYPE_FOOD;
-            node.weight = -food.sz*2;
+            node.weight = food.sz*window.botsettings.astarFoodWeightMultiplier;
             //var node = collisionGrid.markCell(col, row, food.sz, TYPE_FOOD);
             node.items.push(food);
             return node;
@@ -425,8 +425,8 @@ g
             collisionGrid.foodGroups = [];
             foodHighQuality = [];
             var foodGroupIDs = {};
-            var foodGridSize = 10;
-            var foodCellSize = 100;
+            var foodGridSize = window.botsettings.foodGridSize;
+            var foodCellSize = window.botsettings.foodCellSize;
             var foodCellSizeHalf = foodCellSize / 2;
             var curpos = window.getPos();
             var center = collisionGrid.getCellByXY(curpos.x,curpos.y);
@@ -513,7 +513,7 @@ g
 
                     var v = canvas.getRelativeAngle(curpos, food);//{x:food.xx, y:food.yy});
 
-                    if( v.dot < -0.7 )
+                    if( v.dot < window.botsettings.foodIgnoreAngle )
                         continue;
 
                     tempGroup.push(foodgroup);
@@ -610,7 +610,7 @@ g
                 //create collision for the snake head
                 if( snk.xx > collisionGrid.startX && snk.xx < collisionGrid.endX &&
                     snk.yy > collisionGrid.startY && snk.yy < collisionGrid.endY) {
-                    threat = collisionGrid.setupSnakeThreatRadius(snk,2);
+                    threat = collisionGrid.setupSnakeThreatRadius(snk,window.botsettings.collisionSnakeHeadSizeMultiplier);
                     collisionGrid.snakePartBounds(snk,snk,threat);
                 }
 
@@ -674,10 +674,10 @@ g
 
         //generate different radius for the snake
         setupSnakeThreatRadius: function(snk, sizemultiplier) {
-            sizemultiplier = sizemultiplier || 1.2;
+            sizemultiplier = sizemultiplier || window.botsettings.collisionSnakePartSizeMultiplier;
             threatLevels = {};
             threatLevels.radius = window.getSnakeWidth(snk.sc);
-            threatLevels.radius = Math.max(threatLevels.radius, 30) * sizemultiplier;
+            threatLevels.radius = Math.max(threatLevels.radius, window.botsettings.collisionSnakePartMinimumSize) * sizemultiplier;
             threatLevels.t1 = collisionGrid.calculateMaxCellCount(threatLevels.radius);
             threatLevels.tt1 = threatLevels.t1*2;
             threatLevels.t2 = collisionGrid.calculateMaxCellCount(threatLevels.radius * 4);
